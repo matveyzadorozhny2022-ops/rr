@@ -1,101 +1,84 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Тапалка 🎁</title>
+<title>Tap Game</title>
 
 <style>
 *{box-sizing:border-box;touch-action:manipulation;}
 body{
 margin:0;padding:0;display:flex;flex-direction:column;justify-content:center;align-items:center;
-font-family:"Comic Sans MS";color:#fff;text-shadow:2px 2px 5px rgba(0,0,0,.6);
-background:url('fon.jpg') center/cover no-repeat;height:100dvh;overflow:hidden;
+font-family:"Comic Sans MS";color:#fff;height:100dvh;overflow:hidden;
+background:#000 url('fon.jpg') center/cover no-repeat;
 }
 
-/* ✅ Фиксируем место для текста */
+/* ---- fixed message ---- */
 #message{
-height:55px; /* фиксировано — не двигается */
-display:flex;align-items:center;justify-content:center;
-font-size:1.25rem;text-align:center;padding:0 10px;
-transition:opacity .35s ease;
+height:60px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;text-align:center;
+transition:opacity .3s ease;
 }
 
-/* Tap button */
-#btn{
-width:45vw;max-width:220px;cursor:pointer;border-radius:14px;
-transition:transform .18s ease, opacity .35s ease;
+/* ---- slot ---- */
+#slot{
+width:100%;display:flex;justify-content:center;align-items:center;height:220px;position:relative;
 }
-#btn:active{transform:scale(.92);}
-@media(max-width:480px){#btn{width:65vw;}}
 
-/* ✅ Gift smooth appear */
+#btn,#gift{
+width:45vw;max-width:220px;position:absolute;transition:.4s ease;
+user-select:none;pointer-events:auto;
+}
+
+#btn{cursor:pointer;}
+#btn:active{transform:scale(.9);}
+
 #gift{
-width:55vw;max-width:260px;margin-top:1rem;cursor:pointer;
-opacity:0;transform:scale(.7);
-transition:opacity .45s ease, transform .45s ease;
-pointer-events:none;
+opacity:0;transform:scale(.7);pointer-events:none;
 }
 
-/* Progress Bar */
+@media(max-width:480px){#btn,#gift{width:60vw;}}
+
+/* ---- progress ---- */
 .progress-wrap{
-width:52vw;max-width:360px;height:8px;background:rgba(255,255,255,.15);
-border-radius:15px;overflow:hidden;margin-top:12px;
-transition:opacity .4s ease;
+width:55vw;max-width:350px;height:8px;background:rgba(255,255,255,.15);
+border-radius:20px;overflow:hidden;margin-top:8px;transition:.35s;
 }
-.progress{
-height:100%;width:0;background:linear-gradient(90deg,#FFD54A,#FF8A65);
-transition:width .25s linear;
-}
+.progress{height:100%;width:0;background:#FFB400;transition:width .22s linear;}
 
-/* ✅ Popup menu */
+/* ---- menu ---- */
 #confirmBox{
-position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.8);
-background:rgba(0,0,0,.92);padding:22px 28px;border-radius:18px;text-align:center;
-box-shadow:0 0 22px rgba(255,255,255,.25);
-opacity:0;pointer-events:none;backdrop-filter:blur(4px);
-transition:opacity .32s ease, transform .32s ease;
+position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.85);
+background:rgba(0,0,0,.92);padding:22px;border-radius:16px;
+text-align:center;color:#fff;opacity:0;pointer-events:none;
+backdrop-filter:blur(6px);transition:.28s;
 }
-#confirmBox.show{
-opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1);
-}
-#confirmBox p{margin-bottom:16px;font-size:1.15rem;}
-
+#confirmBox.show{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1);}
 .confirm-btn{
-margin:6px;padding:12px 25px;border:none;border-radius:12px;
-font-size:1rem;font-weight:bold;cursor:pointer;
-transition:transform .12s, box-shadow .2s;
+padding:10px 25px;border:none;border-radius:12px;font-size:1rem;
+margin:6px;font-weight:bold;cursor:pointer;transition:.2s;
 }
 .confirm-btn:active{transform:scale(.92);}
+#sellBtn{background:#0092ff;color:#fff;}
+#receiveBtn{background:#FFD800;color:#222;}
 
-/* Yellow receive */
-#receiveBtn{
-background:linear-gradient(180deg,#FFE600,#FFBE00);box-shadow:0 0 12px #FFD700;color:#333;
-}
-/* Blue sell */
-#sellBtn{
-background:linear-gradient(180deg,#00C6FF,#0078FF);box-shadow:0 0 12px #00BFFF;color:#fff;
-}
-
-/* Fireworks */
+/* ---- fireworks ---- */
 .firework{
-position:absolute;opacity:.9;width:130px;height:130px;pointer-events:none;
+position:absolute;pointer-events:none;
 will-change:transform,opacity;
 }
-@keyframes fall{
-0%{transform:translateY(-15vh) scale(1);opacity:1;}
-100%{transform:translateY(110vh) scale(1.3);opacity:0;}
-}
 </style>
-
 </head>
+
 <body>
 
 <div id="message">👆 Нажимай, чтобы получить подарок!</div>
+
+<div id="slot">
 <img id="btn">
-<div class="progress-wrap"><div class="progress" id="tapProgress"></div></div>
 <img id="gift">
+</div>
+
+<div class="progress-wrap"><div id="bar" class="progress"></div></div>
 
 <div id="confirmBox">
 <p>Продать или получить подарок?</p>
@@ -104,93 +87,106 @@ will-change:transform,opacity;
 </div>
 
 <script>
-const msg=document.getElementById('message');
-const btn=document.getElementById('btn');
-const gift=document.getElementById('gift');
-const box=document.getElementById('confirmBox');
-const sell=document.getElementById('sellBtn');
-const recv=document.getElementById('receiveBtn');
-const bar=document.querySelector('.progress-wrap');
-const barFill=document.getElementById('tapProgress');
+/* --- DOM --- */
+const msg=document.getElementById("message");
+const btn=document.getElementById("btn");
+const gift=document.getElementById("gift");
+const bar=document.getElementById("bar");
+const box=document.getElementById("confirmBox");
+const sell=document.getElementById("sellBtn");
+const recv=document.getElementById("receiveBtn");
+const barWrap=document.querySelector(".progress-wrap");
 
-let taps=0,total=5;
-btn.src=['btn1.webp','btn2.webp','btn3.webp'][Math.floor(Math.random()*3)];
+/* --- Resources --- */
+const btns=['btn1.webp','btn2.webp','btn3.webp'];
 const gifts = Array.from({length:15},(_,i)=>`g${i+1}.webp`);
 const fw=['f1.webp','f2.webp','f3.webp'];
+btn.src = btns[Math.random()*3|0];
 
-/* TAP */
-btn.onclick=()=>{
+/* --- Perf detect --- */
+const cores = navigator.hardwareConcurrency || 2;
+const isMobile = matchMedia("(pointer: coarse)").matches;
+const LOW = cores<=3;
+
+/* --- fireworks count --- */
+const FW_COUNT = LOW ? 10 : (isMobile ? 20 : 60);
+
+/* --- Game logic --- */
+let taps=0,total=5,started=false;
+
+btn.addEventListener("click",tap);
+
+function tap(){
 taps++;
-barFill.style.width=(taps/total*100)+'%';
+if(!started){
+started=true;
+btn.style.animation="pulse .6s infinite alternate";
+document.head.insertAdjacentHTML("beforeend",
+"<style>@keyframes pulse{to{transform:scale(.92);}}</style>");
+}
 
-/* start pulse only after first tap */
-if(taps===1) btn.style.animation="pulse .6s infinite alternate";
+bar.style.width=(taps/total*100)+"%";
 
 msg.textContent = taps<total
-? `Продолжай! Осталось ${total-taps} тапа(ов) 🎁`
-: `🎉 Поздравляем! Ты получил подарок!`;
+? `Продолжай! Осталось ${total-taps} тапов 🎁`
+: `🎉 Подарок получен!`;
 
-/* ✅ reached gift */
-if(taps==total){
+if(taps===total) revealGift();
+}
+
+function revealGift(){
 btn.style.opacity=0;
-bar.style.opacity=0;
+barWrap.style.opacity=0;
 
-/* delay remove to keep layout stable */
-setTimeout(()=>{
-btn.style.pointerEvents="none";
-bar.style.pointerEvents="none";
-},350);
+setTimeout(()=>{btn.style.pointerEvents="none";barWrap.style.display="none";},350);
 
-/* show gift smoothly */
-gift.src = gifts[Math.floor(Math.random()*gifts.length)];
-gift.style.opacity=1; 
+gift.src = gifts[Math.random()*15|0];
+gift.style.opacity=1;
 gift.style.transform="scale(1)";
 gift.style.pointerEvents="auto";
 
-launchFireworks();
-}
+launchFX();
 }
 
-/* FIREWORKS */
-function launchFireworks(){
-const n = innerWidth<768 ? 20 : 60;
-for(let i=0;i<n;i++){
-const f=document.createElement('img');
-f.src=fw[Math.floor(Math.random()*fw.length)];
-f.className='firework';
-f.style.left = innerWidth<768 ? '50%' : Math.random()*100+'vw';
-f.style.transform = innerWidth<768 ? 'translateX(-50%)' : '';
-f.style.top = (Math.random()*-50)+'vh';
-f.style.animation=`fall ${0.8+Math.random()*1.1}s linear ${Math.random()*0.8}s forwards`;
+/* ---- FX ---- */
+function launchFX(){
+let n = FW_COUNT;
+let i=0;
+
+(function loop(){
+if(i>=n) return;
+spawn();
+i++;
+requestAnimationFrame(loop);
+})();
+
+function spawn(){
+const f=document.createElement("im");
+f.src = fw[Math.random()*fw.length|0];
+f.className="firework";
+f.style.width = (isMobile?70:120) + "px";
+f.style.left = isMobile ? "50%" : Math.random()*100+"vw";
+if(isMobile) f.style.transform="translateX(-50%)";
+f.style.top = (Math.random()*-30)+"vh";
+f.style.animation=`fall ${0.8+Math.random()*1}s linear forwards`;
 document.body.appendChild(f);
-setTimeout(()=>f.remove(),2000);
+setTimeout(()=>f.remove(),1600);
 }
 }
 
-/* ✅ gift click → menu */
-gift.onclick=()=>box.classList.add('show');
+/* ---- Menu ---- */
+gift.onclick=()=>box.classList.add("show");
 
-/* SELL */
-sell.onclick=()=>{
-box.classList.remove('show');
-msg.innerHTML='💰 Продали! ⭐ Звезды скоро поступят!';
-closeGift();
-}
+sell.onclick=()=>finish("💰 Продано! ⭐ Скоро поступят на ваш баланс Telegram");
+recv.onclick=()=>finish("🎁 Подарок будет добавлен в ваш профиль в течении минуты");
 
-/* RECEIVE */
-recv.onclick=()=>{
-box.classList.remove('show');
-msg.innerHTML='🎁 Подарок добавлен в профиль!';
-closeGift();
-}
-
-/* smooth hide gift */
-function closeGift(){
+function finish(text){
+box.classList.remove("show");
+msg.textContent=text;
 gift.style.opacity=0;
 gift.style.transform="scale(.7)";
-setTimeout(()=>gift.style.pointerEvents="none",350);
+setTimeout(()=>gift.style.pointerEvents="none",300);
 }
 </script>
-
 </body>
 </html>
