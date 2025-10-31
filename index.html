@@ -2,70 +2,60 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Тапалка 🎁</title>
   <style>
-    html, body {
+    * {
+      box-sizing: border-box;
+      touch-action: manipulation;
+    }
+    body {
       margin: 0;
       padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden; /* блокируем прокрутку */
-      background: url('fon.jpg') no-repeat center center;
+      background: url('fon.jpg') no-repeat center center fixed;
       background-size: cover;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
       font-family: "Comic Sans MS", sans-serif;
       color: white;
       text-shadow: 2px 2px 5px rgba(0,0,0,0.6);
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent; /* убираем синее выделение */
+      overflow: hidden;
       user-select: none;
     }
 
     #message {
-      position: absolute;
-      bottom: 23%;
-      width: 90%;
-      left: 50%;
-      transform: translateX(-50%);
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
       text-align: center;
-      font-size: 1.2rem;
-      line-height: 1.4;
-      transition: opacity 0.4s ease;
-      pointer-events: none;
+      padding: 0 10px;
+      transition: opacity 0.5s ease;
     }
 
     #btn {
-      position: absolute;
-      bottom: 10%;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 55vw;
-      max-width: 260px;
+      width: 45vw;
+      max-width: 200px;
       cursor: pointer;
-      transition: transform 0.1s ease;
-      will-change: transform;
+      transition: transform 0.15s;
     }
 
     #btn:active {
-      transform: translateX(-50%) scale(0.93);
+      transform: scale(0.9);
     }
 
     #gift {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 70vw;
-      max-width: 340px;
+      width: 55vw;
+      max-width: 260px;
       display: none;
+      margin-top: 1rem;
       cursor: pointer;
-      transition: transform 0.25s ease, opacity 0.25s ease;
-      will-change: transform, opacity;
+      transition: transform 0.4s ease, opacity 0.4s ease;
     }
 
     .fade-out {
-      transform: translate(-50%, -50%) scale(0.7);
+      transform: scale(0.6);
       opacity: 0;
     }
 
@@ -76,48 +66,55 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: rgba(0,0,0,0.88);
-      padding: 22px 28px;
-      border-radius: 16px;
+      background: rgba(0,0,0,0.9);
+      padding: 25px 35px;
+      border-radius: 20px;
       text-align: center;
       z-index: 10;
-      box-shadow: 0 0 15px rgba(255,255,255,0.25);
-      width: 80%;
-      max-width: 320px;
-      animation: pop 0.25s ease;
+      box-shadow: 0 0 25px rgba(255,255,255,0.3);
+      animation: pop 0.3s ease;
     }
 
     #confirmBox p {
-      margin-bottom: 16px;
-      font-size: 1.1rem;
+      margin-bottom: 20px;
+      font-size: 1.2rem;
     }
 
     .confirm-btn {
-      margin: 5px;
-      padding: 10px 22px;
+      margin: 0 10px;
+      padding: 12px 28px;
       border: none;
-      border-radius: 12px;
+      border-radius: 14px;
       font-size: 1rem;
-      font-weight: bold;
       cursor: pointer;
-      transition: transform 0.15s, box-shadow 0.15s;
-      width: 46%;
+      font-weight: bold;
+      transition: transform 0.15s, box-shadow 0.2s;
     }
 
     .confirm-btn:active {
       transform: scale(0.95);
     }
 
+    /* Жёлтая — ПОЛУЧИТЬ */
     #receiveBtn {
       background: linear-gradient(180deg, #FFE600, #FFBE00);
-      box-shadow: 0 0 10px #FFD700;
+      box-shadow: 0 0 18px #FFD700;
       color: #333;
     }
 
+    #receiveBtn:hover {
+      box-shadow: 0 0 25px #FFF176;
+    }
+
+    /* Голубая — ПРОДАТЬ */
     #sellBtn {
       background: linear-gradient(180deg, #00C6FF, #0078FF);
-      box-shadow: 0 0 10px #00BFFF;
+      box-shadow: 0 0 18px #00BFFF;
       color: #fff;
+    }
+
+    #sellBtn:hover {
+      box-shadow: 0 0 25px #6FDBFF;
     }
 
     @keyframes pop {
@@ -128,25 +125,24 @@
     /* Фейерверки */
     .firework {
       position: absolute;
-      opacity: 0.85;
-      width: 90px;
-      height: 90px;
-      pointer-events: none;
+      opacity: 0.9;
+      width: 130px;
+      height: 130px;
       animation: fall linear forwards;
-      will-change: transform, opacity;
+      pointer-events: none;
     }
 
     @keyframes fall {
-      0% { transform: translateY(-10vh) scale(1); opacity: 1; }
-      100% { transform: translateY(105vh) scale(1.2); opacity: 0; }
+      0% { transform: translateY(-15vh) scale(1); opacity: 1; }
+      100% { transform: translateY(110vh) scale(1.3); opacity: 0; }
     }
   </style>
 </head>
 <body>
 
-  <img id="gift" alt="gift">
-  <div id="message">👆 Тапай, чтобы открыть подарок!</div>
+  <div id="message">👆 Нажимай, чтобы получить подарок!</div>
   <img id="btn" alt="tap button">
+  <img id="gift" alt="gift">
 
   <div id="confirmBox">
     <p>Продать или получить подарок?</p>
@@ -155,11 +151,6 @@
   </div>
 
   <script>
-    // Фиксируем вертикальную ориентацию (portrait)
-    if (screen.orientation && screen.orientation.lock) {
-      screen.orientation.lock('portrait').catch(() => {});
-    }
-
     const btn = document.getElementById('btn');
     const gift = document.getElementById('gift');
     const message = document.getElementById('message');
@@ -171,10 +162,11 @@
     let tapCount = 0;
     const totalTaps = 5;
 
+    // выбираем случайную кнопку
     const btns = ['btn1.webp', 'btn2.webp', 'btn3.webp'];
     btn.src = btns[Math.floor(Math.random() * btns.length)];
 
-    const gifts = Array.from({ length: 15 }, (_, i) => `g${i + 1}.webp`);
+    const gifts = Array.from({ length: 10 }, (_, i) => `g${i + 1}.webp`);
     const fireworks = ['f1.webp', 'f2.webp', 'f3.webp'];
 
     btn.addEventListener('click', () => {
@@ -197,38 +189,41 @@
 
     sellBtn.addEventListener('click', () => {
       confirmBox.style.display = 'none';
-      hideGiftWithMessage('💰 Вы продали подарок!<br>⭐ Звёзды скоро появятся на вашем балансе Telegram ✨');
-    });
-
-    receiveBtn.addEventListener('click', () => {
-      confirmBox.style.display = 'none';
-      hideGiftWithMessage('🎁 Подарок скоро отобразится в профиле!');
-    });
-
-    function hideGiftWithMessage(text) {
       message.style.opacity = 0;
       gift.classList.add('fade-out');
       setTimeout(() => {
         gift.style.display = 'none';
-        message.innerHTML = text;
+        message.innerHTML = '💰 Вы продали подарок!<br>⭐ Звёзды скоро появятся на вашем балансе Telegram ✨';
         message.style.opacity = 1;
-      }, 250);
-    }
+      }, 400);
+    });
 
-    // оптимизированные фейерверки
+    receiveBtn.addEventListener('click', () => {
+      confirmBox.style.display = 'none';
+      message.style.opacity = 0;
+      gift.classList.add('fade-out');
+      setTimeout(() => {
+        gift.style.display = 'none';
+        message.innerHTML = '🎁 Подарок скоро отобразится в профиле!';
+        message.style.opacity = 1;
+      }, 400);
+    });
+
     function launchFireworks() {
-      for (let i = 0; i < 15; i++) {
+      for (let i = 0; i < 60; i++) {
         const fw = document.createElement('img');
         fw.src = fireworks[Math.floor(Math.random() * fireworks.length)];
         fw.classList.add('firework');
         fw.style.left = Math.random() * 100 + 'vw';
-        fw.style.animationDelay = (Math.random() * 1) + 's';
-        fw.style.width = (70 + Math.random() * 40) + 'px';
-        fw.style.animationDuration = (0.8 + Math.random() * 0.6) + 's';
+        fw.style.top = Math.random() * -50 + 'vh';
+        fw.style.width = Math.random() * 90 + 120 + 'px';
+        fw.style.animationDuration = (0.8 + Math.random() * 1.1) + 's';
+        fw.style.animationDelay = (Math.random() * 0.8) + 's';
         body.appendChild(fw);
-        setTimeout(() => fw.remove(), 1500);
+        setTimeout(() => fw.remove(), 2200);
       }
     }
   </script>
+
 </body>
 </html>
