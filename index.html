@@ -10,83 +10,126 @@ body{
 margin:0;padding:0;display:flex;flex-direction:column;justify-content:center;align-items:center;
 font-family:"Comic Sans MS";color:#fff;height:100dvh;overflow:hidden;
 background:#000 url('fon.jpg') center/cover no-repeat;
+-webkit-tap-highlight-color: transparent; /* убирает синее выделение на мобильных */
 }
-#topWrap{display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:4px;}
-#message{
-min-height:48px;display:flex;align-items:center;justify-content:center;
-font-size:1.15rem;text-align:center;transition:opacity .25s;
-}
-#slot{width:100%;display:flex;justify-content:center;align-items:center;height:220px;position:relative;}
-#btn,#gift{width:55vw;max-width:260px;position:absolute;user-select:none;pointer-events:auto;will-change:transform,opacity;}
+#topWrap{display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:6px;}
+#message{min-height:52px;display:flex;align-items:center;justify-content:center;
+font-size:1.25rem;text-align:center;transition:.25s;}
+#slot{width:100%;display:flex;justify-content:center;align-items:center;height:280px;position:relative;}
+#btn,#gift{width:75vw;max-width:360px;position:absolute;user-select:none;will-change:transform,opacity;}
 #gift{opacity:0;transform:scale(.75);pointer-events:none;transition:.28s ease;}
-#btn{cursor:pointer;transition:transform .18s ease;}
-#btn:active{transform:scale(.92);} 
-@media(max-width:480px){#btn,#gift{width:60vw;}}
-.progress-wrap{
-width:55vw;max-width:350px;height:8px;background:rgba(255,255,255,.2);
-border-radius:20px;overflow:hidden;transition:opacity .25s;
-}
+#btn{cursor:pointer;transition:transform .18s ease;outline:none;border:none;-webkit-tap-highlight-color:transparent;}
+#btn:active{transform:scale(.9);}
+@media(max-width:480px){#btn,#gift{width:80vw;}}
+.progress-wrap{width:65vw;max-width:400px;height:8px;background:rgba(255,255,255,.25);
+border-radius:20px;overflow:hidden;transition:.25s;}
 .progress{height:100%;width:0;background:#FFB400;transition:width .22s linear;}
-#confirmBox{
-position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.85);
-background:rgba(0,0,0,.92);padding:22px;border-radius:16px;
-text-align:center;color:#fff;opacity:0;pointer-events:none;
-backdrop-filter:blur(6px);transition:.28s;
-}
+#confirmBox{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.85);
+background:rgba(0,0,0,.92);padding:22px;border-radius:16px;text-align:center;color:#fff;
+opacity:0;pointer-events:none;backdrop-filter:blur(6px);transition:.28s;}
 #confirmBox.show{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1);}
-.confirm-btn{
-padding:10px 25px;border:none;border-radius:12px;font-size:1rem;
-margin:6px;font-weight:bold;cursor:pointer;transition:.2s;
-}
+.confirm-btn{padding:10px 25px;border:none;border-radius:12px;font-size:1rem;
+margin:6px;font-weight:bold;cursor:pointer;transition:.2s;-webkit-tap-highlight-color:transparent;}
 #sellBtn{background:#0092ff;color:#fff;}#receiveBtn{background:#FFD800;color:#222;}
-.confirm-btn:active{transform:scale(.92);} 
-.firework{position:absolute;pointer-events:none;will-change:transform,opacity;}
-@keyframes fall{to{transform:translateY(120vh) scale(.6);opacity:0;}}
+.confirm-btn:active{transform:scale(.92);}
 @keyframes pulse{to{transform:scale(.94);}}
 </style>
 </head>
 <body>
 <div id="topWrap">
-<div id="message">👆 Нажимай, чтобы получить подарок!</div>
-<div class="progress-wrap"><div id="bar" class="progress"></div></div>
+  <div id="message">👆 Нажимай, чтобы получить подарок!</div>
+  <div class="progress-wrap"><div id="bar" class="progress"></div></div>
 </div>
 <div id="slot">
-<img id="btn" loading="eager">
-<img id="gift" loading="lazy">
+  <img id="btn" loading="eager">
+  <img id="gift" loading="lazy">
 </div>
 <div id="confirmBox">
-<p>Продать или получить подарок?</p>
-<button id="sellBtn" class="confirm-btn">ПРОДАТЬ</button>
-<button id="receiveBtn" class="confirm-btn">ПОЛУЧИТЬ</button>
+  <p>Продать или получить подарок?</p>
+  <button id="sellBtn" class="confirm-btn">ПРОДАТЬ</button>
+  <button id="receiveBtn" class="confirm-btn">ПОЛУЧИТЬ</button>
 </div>
+
 <script>
-const msg=document.getElementById("message"),btn=document.getElementById("btn"),gift=document.getElementById("gift"),bar=document.getElementById("bar"),box=document.getElementById("confirmBox"),sell=document.getElementById("sellBtn"),recv=document.getElementById("receiveBtn"),prog=document.querySelector(".progress-wrap");
+const msg=document.getElementById("message"),
+      btn=document.getElementById("btn"),
+      gift=document.getElementById("gift"),
+      bar=document.getElementById("bar"),
+      box=document.getElementById("confirmBox"),
+      sell=document.getElementById("sellBtn"),
+      recv=document.getElementById("receiveBtn"),
+      prog=document.querySelector(".progress-wrap");
+
 const btns=['btn1.webp','btn2.webp','btn3.webp'];
 const gifts=Array.from({length:15},(_,i)=>`g${i+1}.webp`);
-const fw=['f1.webp','f2.webp','f3.webp'];
 btn.src=btns[Math.random()*3|0];
-const cores=navigator.hardwareConcurrency||2;
-const isMobile=matchMedia("(pointer: coarse)").matches;
-const LOW=cores<=3;
-const FW_COUNT=LOW?8:(isMobile?18:55);
 let taps=0,total=5,started=false;
+
 btn.addEventListener("click",tap);
+
 function tap(){
-if(!started){started=true;btn.style.animation="pulse .65s infinite alternate";}
-taps++;
-bar.style.width=(taps/total*100)+"%";
-msg.textContent=taps<total?`Продолжай! Осталось ${total-taps} тапов 🎁`:`🎉 Подарок получен!`;
-if(taps===total) revealGift();}
+ if(!started){started=true;btn.style.animation="pulse .65s infinite alternate";}
+ taps++;
+ bar.style.width=(taps/total*100)+"%";
+ msg.textContent=taps<total?`Продолжай! Осталось ${total-taps} тапов 🎁`:`🎉 Подарок получен!`;
+ if(taps===total) revealGift();
+}
+
 function revealGift(){
-btn.style.opacity=0;btn.style.pointerEvents="none";setTimeout(()=>btn.style.display="none",200);
-prog.style.opacity=0;
-setTimeout(()=>prog.style.display="none",250);
-const img=new Image();img.src=gifts[Math.random()*15|0];img.onload=()=>{gift.src=img.src;gift.style.opacity=1;gift.style.transform="scale(1)";gift.style.pointerEvents="auto";};}
-function launchFX(){let i=0;const n=FW_COUNT;function spawn(){const f=document.createElement("img");f.src=fw[Math.random()*fw.length|0];f.className="firework";f.style.width=(isMobile?60:110)+"px";f.style.left=(isMobile?"50%":Math.random()*100+"vw");if(isMobile)f.style.transform="translateX(-50%)";f.style.top=(Math.random()*-25)+"vh";f.style.animation=`fall ${0.7+Math.random()*1}s linear forwards`;document.body.appendChild(f);setTimeout(()=>f.remove(),1500);}function loop(){if(i>=n)return;spawn();i++;requestAnimationFrame(loop);}loop();}
+ btn.style.opacity=0;
+ btn.style.pointerEvents="none";
+ setTimeout(()=>btn.style.display="none",200);
+ prog.style.opacity=0;
+ setTimeout(()=>prog.style.display="none",250);
+
+ const img=new Image();
+ img.src=gifts[Math.random()*15|0];
+ img.onload=()=>{
+   gift.src=img.src;
+   gift.style.opacity=1;
+   gift.style.transform="scale(1)";
+   gift.style.pointerEvents="auto";
+ };
+}
+
 gift.onclick=()=>box.classList.add("show");
-sell.onclick=()=>finish("💰 Продано! ⭐ Скоро поступят на ваш баланс Telegram");
-recv.onclick=()=>finish("🎁 Подарок будет добавлен в ваш профиль в течении минуты");
-function finish(t){box.classList.remove("show");msg.textContent=t;gift.style.opacity=0;gift.style.transform="scale(.75)";setTimeout(()=>gift.style.pointerEvents="none",280);}
+
+sell.onclick=()=>finish("sell");
+recv.onclick=()=>finish("add");
+
+function finish(type){
+ box.classList.remove("show");
+ gift.style.opacity=0;
+ gift.style.transform="scale(.75)";
+ setTimeout(()=>gift.style.display="none",150);
+
+ const text = type==="sell"
+   ? "💰 Звезды скоро будут зачислены ✨\n⭐ Возвращайся завтра за наградами!"
+   : "🎁 Подарок скоро будет добавлен в профиль 🎉\n✨ Приходи завтра за новым!";
+ msg.style.fontSize="1.4rem";
+ msg.innerText = text;
+
+ // показать бесконечную анимацию L1 или L2
+ const anim=document.createElement("img");
+ anim.src = type==="sell" ? "L1.webp" : "L2.webp";
+ Object.assign(anim.style,{
+   position:"absolute",left:"50%",top:"50%",
+   transform:"translate(-50%,-50%)",
+   width:"55vw",maxWidth:"270px",opacity:0,
+   transition:"opacity 0.4s ease",pointerEvents:"none",zIndex:"10"
+ });
+ document.body.appendChild(anim);
+ requestAnimationFrame(()=>anim.style.opacity=1);
+
+ // перезапуск webp (бесконечная анимация)
+ setInterval(()=>{
+   anim.src = type==="sell" ? "L1.webp" : "L2.webp";
+ },4000);
+
+ // убираем кнопку и прогресс
+ btn.style.display="none";
+ prog.style.display="none";
+}
 </script>
 </body>
 </html>
