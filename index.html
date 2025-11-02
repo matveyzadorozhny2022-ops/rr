@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tap Game Fast</title>
+<title>Tap Game Ultra Fast</title>
 <style>
 *{box-sizing:border-box;touch-action:manipulation;}
 body{
@@ -60,38 +60,33 @@ const msg=document.getElementById("message"),
       recv=document.getElementById("receiveBtn"),
       prog=document.querySelector(".progress-wrap");
 
-// --- источники ---
-const btns=['btn1.webp','btn2.webp','btn3.webp'];
-const gifts=Array.from({length:15},(_,i)=>`g${i+1}.webp`);
-const anims={sell:'L1.webp',add:'L2.webp'};
+// === Используем только ОДИН комплект файлов ===
+const btnStatic='btn1.webp';     // кнопка (первый кадр)
+const giftStatic='g1.webp';      // подарок (первый кадр)
+const finalAnim='L1.webp';       // финальная анимация
 
-// --- предзагрузка первого кадра ---
-function preload(srcs){
-  srcs.forEach(src=>{
-    const img=new Image();
-    img.src=src;
-  });
-}
-preload([...btns.slice(0,1),...gifts.slice(0,3),Object.values(anims)]);
+// === Мгновенная загрузка только нужных ===
+[btnStatic,giftStatic,finalAnim].forEach(src=>{
+  const img=new Image();
+  img.src=src;
+});
 
-// --- установка статичного кадра кнопки ---
-btn.src=btns[Math.random()*3|0];
-let taps=0,total=5,started=false;
-let btnAnimLoaded=false;
+// === установка кнопки ===
+btn.src=btnStatic;
+let taps=0,total=5,started=false,btnAnimated=false;
 
 btn.addEventListener("click",tap);
 
 function tap(){
   if(!started){
     started=true;
-    // подгружаем анимацию кнопки в фоне
-    const animSrc=btn.src;
+    // подгружаем анимацию кнопки только при первом нажатии
     const anim=new Image();
-    anim.src=animSrc;
+    anim.src=btnStatic;
     anim.decoding="async";
     anim.onload=()=>{
-      btn.src=animSrc;
-      btnAnimLoaded=true;
+      btn.src=btnStatic;
+      btnAnimated=true;
       btn.style.animation="pulse .65s infinite alternate";
     };
   }
@@ -101,7 +96,7 @@ function tap(){
   if(taps===total) revealGift();
 }
 
-// --- показ подарка ---
+// === показ подарка ===
 function revealGift(){
   btn.style.opacity=0;
   btn.style.pointerEvents="none";
@@ -109,54 +104,48 @@ function revealGift(){
   prog.style.opacity=0;
   setTimeout(()=>prog.style.display="none",250);
 
-  const giftSrc=gifts[Math.random()*15|0];
-  // показываем статичный кадр мгновенно
-  gift.src=giftSrc;
+  // сначала показываем статичный кадр
+  gift.src=giftStatic;
   gift.style.opacity=1;
   gift.style.transform="scale(1)";
   gift.style.pointerEvents="auto";
 
-  // подгружаем анимацию в фоне
-  const fullAnim=new Image();
-  fullAnim.src=giftSrc;
-  fullAnim.decoding="async";
-  fullAnim.onload=()=>{
-    gift.src=giftSrc; // заменяем на анимацию, когда готова
+  // подгружаем анимацию в фоне (тот же файл)
+  const anim=new Image();
+  anim.src=giftStatic;
+  anim.decoding="async";
+  anim.onload=()=>{
+    gift.src=giftStatic; // просто обновит, когда загрузится полностью
   };
 }
 
 gift.onclick=()=>box.classList.add("show");
 
-sell.onclick=()=>finish("sell");
-recv.onclick=()=>finish("add");
+sell.onclick=()=>finish();
+recv.onclick=()=>finish();
 
-// --- финальная анимация ---
-function finish(type){
+// === финальная сцена ===
+function finish(){
   box.classList.remove("show");
   gift.style.opacity=0;
   gift.style.transform="scale(.75)";
   setTimeout(()=>gift.style.display="none",150);
 
-  const text = type==="sell"
-    ? "💰 Звезды скоро будут зачислены ✨\n⭐ Возвращайся завтра за наградами!"
-    : "🎁 Подарок скоро будет добавлен в профиль 🎉\n✨ Приходи завтра за новым!";
   msg.style.fontSize="1.4rem";
-  msg.innerText=text;
+  msg.innerText="🎁 Спасибо за игру! Возвращайся завтра!";
 
+  // показываем лёгкую финальную анимацию
   const anim=document.createElement("img");
-  anim.src=anims[type];
+  anim.src=finalAnim;
   anim.decoding="async";
   Object.assign(anim.style,{
     position:"absolute",left:"50%",top:"50%",
     transform:"translate(-50%,-50%)",
     width:"55vw",maxWidth:"270px",opacity:0,
-    transition:"opacity 0.4s ease",pointerEvents:"none",zIndex:"10"
+    transition:"opacity .4s ease",pointerEvents:"none",zIndex:"10"
   });
   document.body.appendChild(anim);
   requestAnimationFrame(()=>anim.style.opacity=1);
-
-  btn.style.display="none";
-  prog.style.display="none";
 }
 </script>
 </body>
