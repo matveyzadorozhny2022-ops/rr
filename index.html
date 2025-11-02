@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tap Game Optimized</title>
+<title>Tap Game Fast</title>
 <style>
 *{box-sizing:border-box;touch-action:manipulation;}
 body{
@@ -41,8 +41,8 @@ body{
   <div class="progress-wrap"><div id="bar" class="progress"></div></div>
 </div>
 <div id="slot">
-  <img id="btn" loading="eager">
-  <img id="gift" loading="lazy">
+  <img id="btn" loading="eager" decoding="async">
+  <img id="gift" loading="lazy" decoding="async">
 </div>
 <div id="confirmBox">
   <p>Продать или получить подарок?</p>
@@ -60,37 +60,48 @@ const msg=document.getElementById("message"),
       recv=document.getElementById("receiveBtn"),
       prog=document.querySelector(".progress-wrap");
 
-// Список webp изображений
+// --- источники ---
 const btns=['btn1.webp','btn2.webp','btn3.webp'];
 const gifts=Array.from({length:15},(_,i)=>`g${i+1}.webp`);
-const preloadList=['L1.webp','L2.webp',...btns,...gifts];
+const anims={sell:'L1.webp',add:'L2.webp'};
 
-// 🔹 Предзагрузка и декодирование изображений для ускорения
-preloadList.forEach(src=>{
-  fetch(src)
-    .then(r=>r.blob())
-    .then(b=>createImageBitmap(b))
-    .catch(()=>{});
-});
+// --- предзагрузка первого кадра ---
+function preload(srcs){
+  srcs.forEach(src=>{
+    const img=new Image();
+    img.src=src;
+  });
+}
+preload([...btns.slice(0,1),...gifts.slice(0,3),Object.values(anims)]);
 
-btn.decoding="async";
-btn.fetchPriority="high";
-gift.decoding="async";
-gift.loading="lazy";
-
+// --- установка статичного кадра кнопки ---
 btn.src=btns[Math.random()*3|0];
 let taps=0,total=5,started=false;
+let btnAnimLoaded=false;
 
 btn.addEventListener("click",tap);
 
 function tap(){
-  if(!started){started=true;btn.style.animation="pulse .65s infinite alternate";}
+  if(!started){
+    started=true;
+    // подгружаем анимацию кнопки в фоне
+    const animSrc=btn.src;
+    const anim=new Image();
+    anim.src=animSrc;
+    anim.decoding="async";
+    anim.onload=()=>{
+      btn.src=animSrc;
+      btnAnimLoaded=true;
+      btn.style.animation="pulse .65s infinite alternate";
+    };
+  }
   taps++;
   bar.style.width=(taps/total*100)+"%";
   msg.textContent=taps<total?`Продолжай! Осталось ${total-taps} тапов 🎁`:`🎉 Подарок получен!`;
   if(taps===total) revealGift();
 }
 
+// --- показ подарка ---
 function revealGift(){
   btn.style.opacity=0;
   btn.style.pointerEvents="none";
@@ -98,15 +109,19 @@ function revealGift(){
   prog.style.opacity=0;
   setTimeout(()=>prog.style.display="none",250);
 
-  const imgSrc=gifts[Math.random()*15|0];
-  const img=new Image();
-  img.src=imgSrc;
-  img.decoding="async";
-  img.onload=()=>{
-    gift.src=imgSrc;
-    gift.style.opacity=1;
-    gift.style.transform="scale(1)";
-    gift.style.pointerEvents="auto";
+  const giftSrc=gifts[Math.random()*15|0];
+  // показываем статичный кадр мгновенно
+  gift.src=giftSrc;
+  gift.style.opacity=1;
+  gift.style.transform="scale(1)";
+  gift.style.pointerEvents="auto";
+
+  // подгружаем анимацию в фоне
+  const fullAnim=new Image();
+  fullAnim.src=giftSrc;
+  fullAnim.decoding="async";
+  fullAnim.onload=()=>{
+    gift.src=giftSrc; // заменяем на анимацию, когда готова
   };
 }
 
@@ -115,6 +130,7 @@ gift.onclick=()=>box.classList.add("show");
 sell.onclick=()=>finish("sell");
 recv.onclick=()=>finish("add");
 
+// --- финальная анимация ---
 function finish(type){
   box.classList.remove("show");
   gift.style.opacity=0;
@@ -128,7 +144,8 @@ function finish(type){
   msg.innerText=text;
 
   const anim=document.createElement("img");
-  anim.src=type==="sell"?"L1.webp":"L2.webp";
+  anim.src=anims[type];
+  anim.decoding="async";
   Object.assign(anim.style,{
     position:"absolute",left:"50%",top:"50%",
     transform:"translate(-50%,-50%)",
@@ -137,12 +154,6 @@ function finish(type){
   });
   document.body.appendChild(anim);
   requestAnimationFrame(()=>anim.style.opacity=1);
-
-  // 🔹 Быстрый перезапуск анимации
-  setInterval(()=>{
-    const tmp=type==="sell"?"L1.webp":"L2.webp";
-    anim.src=tmp+"?"+Date.now();
-  },4000);
 
   btn.style.display="none";
   prog.style.display="none";
