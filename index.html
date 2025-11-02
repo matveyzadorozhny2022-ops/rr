@@ -60,35 +60,36 @@ const msg=document.getElementById("message"),
       recv=document.getElementById("receiveBtn"),
       prog=document.querySelector(".progress-wrap");
 
-// === Используем только ОДИН комплект файлов ===
-const btnStatic='btn1.webp';     // кнопка (первый кадр)
-const giftStatic='g1.webp';      // подарок (первый кадр)
-const finalAnim='L1.webp';       // финальная анимация
+// === ресурсы ===
+const btns=['btn1.webp','btn2.webp','btn3.webp'];
+const gifts=Array.from({length:15},(_,i)=>`g${i+1}.webp`);
+const anims=['L1.webp','L2.webp'];
 
-// === Мгновенная загрузка только нужных ===
-[btnStatic,giftStatic,finalAnim].forEach(src=>{
+// === выбираем случайные ===
+const btnSrc = btns[Math.floor(Math.random()*btns.length)];
+const giftSrc = gifts[Math.floor(Math.random()*gifts.length)];
+const finalAnim = anims[Math.floor(Math.random()*anims.length)];
+
+// === предзагрузка только этих трёх ===
+[btnSrc, giftSrc, finalAnim].forEach(src=>{
   const img=new Image();
   img.src=src;
 });
 
-// === установка кнопки ===
-btn.src=btnStatic;
-let taps=0,total=5,started=false,btnAnimated=false;
+btn.src=btnSrc;
+
+let taps=0,total=5,started=false;
 
 btn.addEventListener("click",tap);
 
 function tap(){
   if(!started){
     started=true;
-    // подгружаем анимацию кнопки только при первом нажатии
+    // подгружаем анимацию кнопки после первого тапа
     const anim=new Image();
-    anim.src=btnStatic;
+    anim.src=btnSrc;
     anim.decoding="async";
-    anim.onload=()=>{
-      btn.src=btnStatic;
-      btnAnimated=true;
-      btn.style.animation="pulse .65s infinite alternate";
-    };
+    anim.onload=()=>{ btn.src=btnSrc; };
   }
   taps++;
   bar.style.width=(taps/total*100)+"%";
@@ -96,7 +97,6 @@ function tap(){
   if(taps===total) revealGift();
 }
 
-// === показ подарка ===
 function revealGift(){
   btn.style.opacity=0;
   btn.style.pointerEvents="none";
@@ -104,19 +104,16 @@ function revealGift(){
   prog.style.opacity=0;
   setTimeout(()=>prog.style.display="none",250);
 
-  // сначала показываем статичный кадр
-  gift.src=giftStatic;
+  // показываем подарок сразу (только один webp)
+  gift.src=giftSrc;
   gift.style.opacity=1;
   gift.style.transform="scale(1)";
   gift.style.pointerEvents="auto";
 
-  // подгружаем анимацию в фоне (тот же файл)
-  const anim=new Image();
-  anim.src=giftStatic;
-  anim.decoding="async";
-  anim.onload=()=>{
-    gift.src=giftStatic; // просто обновит, когда загрузится полностью
-  };
+  // когда полностью загрузится — просто обновляем src
+  const preload=new Image();
+  preload.src=giftSrc;
+  preload.onload=()=>{ gift.src=giftSrc; };
 }
 
 gift.onclick=()=>box.classList.add("show");
@@ -124,7 +121,6 @@ gift.onclick=()=>box.classList.add("show");
 sell.onclick=()=>finish();
 recv.onclick=()=>finish();
 
-// === финальная сцена ===
 function finish(){
   box.classList.remove("show");
   gift.style.opacity=0;
@@ -134,7 +130,7 @@ function finish(){
   msg.style.fontSize="1.4rem";
   msg.innerText="🎁 Спасибо за игру! Возвращайся завтра!";
 
-  // показываем лёгкую финальную анимацию
+  // финальная анимация
   const anim=document.createElement("img");
   anim.src=finalAnim;
   anim.decoding="async";
