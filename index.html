@@ -40,10 +40,12 @@ body{
   <div id="message">👆 Нажимай, чтобы получить подарок!</div>
   <div class="progress-wrap"><div id="bar" class="progress"></div></div>
 </div>
+
 <div id="slot">
   <img id="btn" loading="eager">
   <img id="gift" loading="lazy">
 </div>
+
 <div id="confirmBox">
   <p>Продать или получить подарок?</p>
   <button id="sellBtn" class="confirm-btn">ПРОДАТЬ</button>
@@ -60,31 +62,44 @@ const msg=document.getElementById("message"),
       recv=document.getElementById("receiveBtn"),
       prog=document.querySelector(".progress-wrap");
 
-// Список webp изображений
+// --- Списки ---
 const btns=['btn1.webp','btn2.webp','btn3.webp'];
 const gifts=Array.from({length:15},(_,i)=>`g${i+1}.webp`);
-const preloadList=['L1.webp','L2.webp',...btns,...gifts];
 
-// 🔹 Предзагрузка и декодирование изображений для ускорения
-preloadList.forEach(src=>{
+// --- Выбираем случайные ---
+const btnSrc = btns[Math.random()*3|0];
+const giftSrc = gifts[Math.random()*15|0];
+
+// --- Предзагружаем только выбранные кнопку и подарок ---
+[btnSrc, giftSrc].forEach(src=>{
   fetch(src)
     .then(r=>r.blob())
     .then(b=>createImageBitmap(b))
     .catch(()=>{});
 });
 
+// --- Настройки кнопки и подарка ---
 btn.decoding="async";
 btn.fetchPriority="high";
+btn.src = btnSrc;
+
 gift.decoding="async";
 gift.loading="lazy";
+gift.src = giftSrc;
+gift.style.opacity = 0;
+gift.style.transform = "scale(.75)";
+gift.style.pointerEvents = "none";
 
-btn.src=btns[Math.random()*3|0];
+// --- Игровая логика ---
 let taps=0,total=5,started=false;
 
 btn.addEventListener("click",tap);
 
 function tap(){
-  if(!started){started=true;btn.style.animation="pulse .65s infinite alternate";}
+  if(!started){
+    started=true;
+    btn.style.animation="pulse .65s infinite alternate";
+  }
   taps++;
   bar.style.width=(taps/total*100)+"%";
   msg.textContent=taps<total?`Продолжай! Осталось ${total-taps} тапов 🎁`:`🎉 Подарок получен!`;
@@ -98,16 +113,10 @@ function revealGift(){
   prog.style.opacity=0;
   setTimeout(()=>prog.style.display="none",250);
 
-  const imgSrc=gifts[Math.random()*15|0];
-  const img=new Image();
-  img.src=imgSrc;
-  img.decoding="async";
-  img.onload=()=>{
-    gift.src=imgSrc;
-    gift.style.opacity=1;
-    gift.style.transform="scale(1)";
-    gift.style.pointerEvents="auto";
-  };
+  // показываем уже загруженный подарок
+  gift.style.opacity=1;
+  gift.style.transform="scale(1)";
+  gift.style.pointerEvents="auto";
 }
 
 gift.onclick=()=>box.classList.add("show");
@@ -127,8 +136,13 @@ function finish(type){
   msg.style.fontSize="1.4rem";
   msg.innerText=text;
 
-  const anim=document.createElement("img");
-  anim.src=type==="sell"?"L1.webp":"L2.webp";
+  // --- Загружаем анимацию L.webp только при необходимости ---
+  const animSrc = 'L.webp';
+  const anim = document.createElement("img");
+  anim.decoding = "async";
+  anim.loading = "eager";
+  anim.src = animSrc;
+
   Object.assign(anim.style,{
     position:"absolute",left:"50%",top:"50%",
     transform:"translate(-50%,-50%)",
@@ -138,11 +152,8 @@ function finish(type){
   document.body.appendChild(anim);
   requestAnimationFrame(()=>anim.style.opacity=1);
 
-  // 🔹 Быстрый перезапуск анимации
-  setInterval(()=>{
-    const tmp=type==="sell"?"L1.webp":"L2.webp";
-    anim.src=tmp+"?"+Date.now();
-  },4000);
+  // перезапуск webp-анимации
+  setInterval(()=>{ anim.src = animSrc + "?" + Date.now(); },4000);
 
   btn.style.display="none";
   prog.style.display="none";
