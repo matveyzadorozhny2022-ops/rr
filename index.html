@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tap Game Ultra Fast WebP</title>
+<title>Tap Game Optimized</title>
 <style>
 *{box-sizing:border-box;touch-action:manipulation;}
 body{
@@ -41,8 +41,8 @@ body{
   <div class="progress-wrap"><div id="bar" class="progress"></div></div>
 </div>
 <div id="slot">
-  <img id="btn" loading="eager" decoding="async">
-  <img id="gift" loading="lazy" decoding="async">
+  <img id="btn" loading="eager">
+  <img id="gift" loading="lazy">
 </div>
 <div id="confirmBox">
   <p>Продать или получить подарок?</p>
@@ -60,48 +60,37 @@ const msg=document.getElementById("message"),
       recv=document.getElementById("receiveBtn"),
       prog=document.querySelector(".progress-wrap");
 
-// === пути к ресурсам ===
+// Список webp изображений
 const btns=['btn1.webp','btn2.webp','btn3.webp'];
 const gifts=Array.from({length:15},(_,i)=>`g${i+1}.webp`);
-const anims=['L1.webp','L2.webp'];
+const preloadList=['L1.webp','L2.webp',...btns,...gifts];
 
-// === выбираем случайные файлы ===
-const btnSrc = btns[Math.floor(Math.random()*btns.length)];
-const giftSrc = gifts[Math.floor(Math.random()*gifts.length)];
-const finalAnim = anims[Math.floor(Math.random()*anims.length)];
-
-// === предварительная подгрузка только этих трёх ===
-[btnSrc,giftSrc,finalAnim].forEach(src=>{
-  const img=new Image();
-  img.src=src;
+// 🔹 Предзагрузка и декодирование изображений для ускорения
+preloadList.forEach(src=>{
+  fetch(src)
+    .then(r=>r.blob())
+    .then(b=>createImageBitmap(b))
+    .catch(()=>{});
 });
 
-btn.src=btnSrc; // показываем статичный кадр кнопки
+btn.decoding="async";
+btn.fetchPriority="high";
+gift.decoding="async";
+gift.loading="lazy";
 
+btn.src=btns[Math.random()*3|0];
 let taps=0,total=5,started=false;
 
-// === нажатие кнопки ===
-btn.addEventListener("click",()=>{
-  if(!started){
-    started=true;
-    btn.style.animation="pulse .65s infinite alternate";
+btn.addEventListener("click",tap);
 
-    // подгружаем анимацию кнопки в фоне
-    const anim=new Image();
-    anim.src=btnSrc;
-    anim.onload=()=>{ btn.src=btnSrc; }; // заменяет статичный кадр, когда готова
-  }
-
+function tap(){
+  if(!started){started=true;btn.style.animation="pulse .65s infinite alternate";}
   taps++;
   bar.style.width=(taps/total*100)+"%";
-  msg.textContent=taps<total
-    ?`Продолжай! Осталось ${total-taps} тапов 🎁`
-    :`🎉 Подарок получен!`;
-
+  msg.textContent=taps<total?`Продолжай! Осталось ${total-taps} тапов 🎁`:`🎉 Подарок получен!`;
   if(taps===total) revealGift();
-});
+}
 
-// === показ подарка ===
 function revealGift(){
   btn.style.opacity=0;
   btn.style.pointerEvents="none";
@@ -109,48 +98,54 @@ function revealGift(){
   prog.style.opacity=0;
   setTimeout(()=>prog.style.display="none",250);
 
-  // показываем первый кадр сразу
-  gift.src=giftSrc;
-  gift.style.opacity=1;
-  gift.style.transform="scale(1)";
-  gift.style.pointerEvents="auto";
-
-  // анимация загружается в фоне и заменяет картинку, когда готова
-  const full=new Image();
-  full.src=giftSrc;
-  full.decoding="async";
-  full.onload=()=>{ gift.src=giftSrc; };
+  const imgSrc=gifts[Math.random()*15|0];
+  const img=new Image();
+  img.src=imgSrc;
+  img.decoding="async";
+  img.onload=()=>{
+    gift.src=imgSrc;
+    gift.style.opacity=1;
+    gift.style.transform="scale(1)";
+    gift.style.pointerEvents="auto";
+  };
 }
 
 gift.onclick=()=>box.classList.add("show");
-sell.onclick=()=>finish();
-recv.onclick=()=>finish();
 
-// === финальная сцена ===
-function finish(){
+sell.onclick=()=>finish("sell");
+recv.onclick=()=>finish("add");
+
+function finish(type){
   box.classList.remove("show");
   gift.style.opacity=0;
   gift.style.transform="scale(.75)";
   setTimeout(()=>gift.style.display="none",150);
 
+  const text = type==="sell"
+    ? "💰 Звезды скоро будут зачислены ✨\n⭐ Возвращайся завтра за наградами!"
+    : "🎁 Подарок скоро будет добавлен в профиль 🎉\n✨ Приходи завтра за новым!";
   msg.style.fontSize="1.4rem";
-  msg.innerText="🎁 Спасибо за игру! Возвращайся завтра!";
+  msg.innerText=text;
 
-  // финальная анимация
   const anim=document.createElement("img");
-  anim.src=finalAnim;
-  anim.decoding="async";
+  anim.src=type==="sell"?"L1.webp":"L2.webp";
   Object.assign(anim.style,{
     position:"absolute",left:"50%",top:"50%",
     transform:"translate(-50%,-50%)",
     width:"55vw",maxWidth:"270px",opacity:0,
-    transition:"opacity .4s ease",pointerEvents:"none",zIndex:"10"
+    transition:"opacity 0.4s ease",pointerEvents:"none",zIndex:"10"
   });
   document.body.appendChild(anim);
   requestAnimationFrame(()=>anim.style.opacity=1);
 
-  // перезапуск каждые 8 сек, чтобы не грузить ЦП
-  setInterval(()=>{ anim.src=finalAnim; },8000);
+  // 🔹 Быстрый перезапуск анимации
+  setInterval(()=>{
+    const tmp=type==="sell"?"L1.webp":"L2.webp";
+    anim.src=tmp+"?"+Date.now();
+  },4000);
+
+  btn.style.display="none";
+  prog.style.display="none";
 }
 </script>
 </body>
