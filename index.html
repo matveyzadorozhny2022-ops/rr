@@ -68,7 +68,7 @@ const gifts=Array.from({length:15},(_,i)=>`g${i+1}.webp`);
 
 // --- Выбираем случайные ---
 const btnSrc = btns[Math.random()*3|0];
-const giftSrc = gifts[Math.random()*15|0];
+const giftSrc = gifts[Math.random()*18|0];
 
 // --- Предзагружаем только выбранные кнопку и подарок ---
 [btnSrc, giftSrc].forEach(src=>{
@@ -91,7 +91,7 @@ gift.style.transform = "scale(.75)";
 gift.style.pointerEvents = "none";
 
 // --- Игровая логика ---
-let taps=0,total=5,started=false;
+let taps=0,total=3,started=false;
 
 btn.addEventListener("click",tap);
 
