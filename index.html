@@ -9,7 +9,7 @@
 body{
   margin:0;padding:0;display:flex;flex-direction:column;justify-content:center;align-items:center;
   font-family:"Comic Sans MS";color:#fff;height:100dvh;overflow:hidden;
-  background:#000 url('fon.jpg') center/cover no-repeat;
+  background:#000 url('fon1.png') center/cover no-repeat;
   -webkit-tap-highlight-color:transparent;
 }
 #topWrap{display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:6px;}
@@ -60,17 +60,14 @@ const msg=document.getElementById("message"),
       recv=document.getElementById("receiveBtn"),
       prog=document.querySelector(".progress-wrap");
 
-// ====== Настройка подарков и вероятностей ======
-const btns=['btn1.webp','btn2.webp','btn3.webp'];
-const gifts=Array.from({length:18},(_,i)=>`g${i+1}.webp`);
-let weights = new Array(gifts.length).fill(1);
-
-// ====== Предзагрузка ======
-const preloadList=['L1.webp','L2.webp',...btns,...gifts];
-preloadList.forEach(src=>{
-  fetch(src).then(r=>r.blob()).then(b=>createImageBitmap(b)).catch(()=>{});
-});
-
+// ====== Случайный фон ======
+const backgrounds = [
+  "fon1.jpg",
+  "fon2.jpg",
+  "fon3.jpg",
+  "fon4.jpg",
+  "fon5.jpg"
+];
 function randomFloat(){
   try{
     if(window.crypto && crypto.getRandomValues){
@@ -80,6 +77,31 @@ function randomFloat(){
     }
   }catch(e){}
   return Math.random();
+}
+const randomBg = backgrounds[Math.floor(randomFloat() * backgrounds.length)];
+document.body.style.background = `#000 url('${randomBg}') center/cover no-repeat`;
+
+// ====== Настройка подарков и вероятностей ======
+const btns=['btn1.webp','btn2.webp','btn3.webp'];
+const gifts=Array.from({length:18},(_,i)=>`g${i+1}.webp`);
+let weights = new Array(gifts.length).fill(1);
+
+// ====== Предзагрузка ======
+const preloadList=['L1.webp','L2.webp',...btns,...gifts,...backgrounds];
+preloadList.forEach(src=>{
+  fetch(src).then(r=>r.blob()).then(b=>createImageBitmap(b)).catch(()=>{});
+});
+
+btn.src=btns[Math.floor(randomFloat()*btns.length)];
+let taps=0,total=5,started=false;
+btn.addEventListener("click",tap);
+
+function tap(){
+  if(!started){started=true;btn.style.animation="pulse .65s infinite alternate";}
+  taps++;
+  bar.style.width=(taps/total*100)+"%";
+  msg.textContent=taps<total?`Продолжай! Осталось ${total-taps} тапов 🎁`:`🎉 Подарок получен!`;
+  if(taps===total) revealGift();
 }
 
 function chooseWeighted(items, w){
@@ -92,18 +114,6 @@ function chooseWeighted(items, w){
     if(r<acc)return items[i];
   }
   return items[items.length-1];
-}
-
-btn.src=btns[Math.floor(randomFloat()*btns.length)];
-let taps=0,total=5,started=false;
-btn.addEventListener("click",tap);
-
-function tap(){
-  if(!started){started=true;btn.style.animation="pulse .65s infinite alternate";}
-  taps++;
-  bar.style.width=(taps/total*100)+"%";
-  msg.textContent=taps<total?`Продолжай! Осталось ${total-taps} тапов 🎁`:`🎉 Подарок получен!`;
-  if(taps===total) revealGift();
 }
 
 function revealGift(){
@@ -123,20 +133,15 @@ function revealGift(){
   img.decoding="async";
   img.onload=()=>{
     gift.src=imgSrc;
-
-    // Только для g9, g16 и g18 добавляем чуть более светлый прозрачный фон
     const special=['g9.webp','g16.webp','g18.webp'];
     if(special.includes(imgSrc)){
       gift.style.background = 'rgba(255,255,255,0.12)';
       gift.style.borderRadius = '18px';
       gift.style.padding = '8px';
-      gift.style.boxShadow = 'none';
     } else {
       gift.style.background = 'none';
       gift.style.padding = '0';
-      gift.style.boxShadow = 'none';
     }
-
     gift.style.opacity=1;
     gift.style.transform="scale(1)";
     gift.style.pointerEvents="auto";
