@@ -51,140 +51,144 @@ body{
 </div>
 
 <script>
-const msg=document.getElementById("message"),
-      btn=document.getElementById("btn"),
-      gift=document.getElementById("gift"),
-      bar=document.getElementById("bar"),
-      box=document.getElementById("confirmBox"),
-      sell=document.getElementById("sellBtn"),
-      recv=document.getElementById("receiveBtn"),
-      prog=document.querySelector(".progress-wrap");
+document.addEventListener("DOMContentLoaded", () => {
 
-// ====== Генератор случайных чисел ======
-function randomFloat(){
-  try{
-    if(window.crypto && crypto.getRandomValues){
-      const arr=new Uint32Array(1);
-      crypto.getRandomValues(arr);
-      return arr[0]/4294967296;
-    }
-  }catch(e){}
-  return Math.random();
-}
+  const msg=document.getElementById("message"),
+        btn=document.getElementById("btn"),
+        gift=document.getElementById("gift"),
+        bar=document.getElementById("bar"),
+        box=document.getElementById("confirmBox"),
+        sell=document.getElementById("sellBtn"),
+        recv=document.getElementById("receiveBtn"),
+        prog=document.querySelector(".progress-wrap");
 
-// ====== Случайный фон (PNG) ======
-const backgrounds = [
-  "fon1.png",
-  "fon2.png",
-  "fon3.png",
-  "fon4.png",
-  "fon5.png"
-];
-const randomBg = backgrounds[Math.floor(randomFloat() * backgrounds.length)];
-document.body.style.backgroundImage = `url('${randomBg}')`;
-
-// ====== Настройка подарков и вероятностей ======
-const btns=['btn1.webp','btn2.webp','btn3.webp'];
-const gifts=Array.from({length:18},(_,i)=>`g${i+1}.webp`);
-let weights = new Array(gifts.length).fill(1);
-
-// ====== Предзагрузка ======
-const preloadList=['L1.webp','L2.webp',...btns,...gifts,randomBg]; // ← только 1 фон
-preloadList.forEach(src=>{
-  fetch(src).then(r=>r.blob()).then(b=>createImageBitmap(b)).catch(()=>{});
-});
-
-btn.src=btns[Math.floor(randomFloat()*btns.length)];
-let taps=0,total=5,started=false;
-btn.addEventListener("click",tap);
-
-function tap(){
-  if(!started){started=true;btn.style.animation="pulse .65s infinite alternate";}
-  taps++;
-  bar.style.width=(taps/total*100)+"%";
-  msg.textContent=taps<total?`Продолжай! Осталось ${total-taps} тапов 🎁`:`🎉 Подарок получен!`;
-  if(taps===total) revealGift();
-}
-
-function chooseWeighted(items, w){
-  const sum=w.reduce((a,b)=>a+Math.max(0,b),0);
-  if(sum===0)return items[Math.floor(randomFloat()*items.length)];
-  const r=randomFloat()*sum;
-  let acc=0;
-  for(let i=0;i<w.length;i++){
-    acc+=Math.max(0,w[i]);
-    if(r<acc)return items[i];
+  // ====== Генератор случайных чисел ======
+  function randomFloat(){
+    try{
+      if(window.crypto && crypto.getRandomValues){
+        const arr=new Uint32Array(1);
+        crypto.getRandomValues(arr);
+        return arr[0]/4294967296;
+      }
+    }catch(e){}
+    return Math.random();
   }
-  return items[items.length-1];
-}
 
-function revealGift(){
-  btn.style.opacity=0;
-  btn.style.pointerEvents="none";
-  setTimeout(()=>btn.style.display="none",200);
-  prog.style.opacity=0;
-  setTimeout(()=>prog.style.display="none",250);
+  // ====== Случайный фон (PNG) ======
+  const backgrounds = ["fon1.png","fon2.png","fon3.png","fon4.png","fon5.png"];
+  const randomBg = backgrounds[Math.floor(randomFloat() * backgrounds.length)];
 
-  const imgSrc = chooseWeighted(gifts, weights);
-  gift.style.boxShadow = 'none';
-  gift.style.background = 'none';
-  gift.style.padding = '0';
-
-  const img=new Image();
-  img.src=imgSrc;
-  img.decoding="async";
-  img.onload=()=>{
-    gift.src=imgSrc;
-    const special=['g9.webp','g16.webp','g18.webp'];
-    if(special.includes(imgSrc)){
-      gift.style.background = 'rgba(255,255,255,0.12)';
-      gift.style.borderRadius = '18px';
-      gift.style.padding = '8px';
-    } else {
-      gift.style.background = 'none';
-      gift.style.padding = '0';
-    }
-    gift.style.opacity=1;
-    gift.style.transform="scale(1)";
-    gift.style.pointerEvents="auto";
+  // загружаем фон безопасно
+  const bgImg = new Image();
+  bgImg.src = randomBg;
+  bgImg.onload = () => {
+    document.body.style.backgroundImage = `url('${randomBg}')`;
   };
-}
+  bgImg.onerror = () => {
+    // если фон не загрузился — подставим запасной
+    document.body.style.background = "#000";
+  };
 
-gift.onclick=()=>box.classList.add("show");
-sell.onclick=()=>finish("sell");
-recv.onclick=()=>finish("add");
+  // ====== Настройка подарков и вероятностей ======
+  const btns=['btn1.webp','btn2.webp','btn3.webp'];
+  const gifts=Array.from({length:18},(_,i)=>`g${i+1}.webp`);
+  let weights = new Array(gifts.length).fill(1);
 
-function finish(type){
-  box.classList.remove("show");
-  gift.style.opacity=0;
-  gift.style.transform="scale(.75)";
-  setTimeout(()=>gift.style.display="none",150);
-
-  const text = type==="sell"
-    ? "💰 Звезды скоро будут зачислены ✨\n⭐ Возвращайся завтра за наградами!"
-    : "🎁 Подарок скоро будет добавлен в профиль 🎉\n✨ Приходи завтра за новым!";
-  msg.style.fontSize="1.4rem";
-  msg.innerText=text;
-
-  const anim=document.createElement("img");
-  anim.src=type==="sell"?"L1.webp":"L2.webp";
-  Object.assign(anim.style,{
-    position:"absolute",left:"50%",top:"50%",
-    transform:"translate(-50%,-50%)",
-    width:"55vw",maxWidth:"270px",opacity:0,
-    transition:"opacity 0.4s ease",pointerEvents:"none",zIndex:"10"
+  // ====== Предзагрузка ======
+  const preloadList=['L1.webp','L2.webp',...btns,...gifts,randomBg];
+  preloadList.forEach(src=>{
+    fetch(src).then(r=>r.blob()).then(b=>createImageBitmap(b)).catch(()=>{});
   });
-  document.body.appendChild(anim);
-  requestAnimationFrame(()=>anim.style.opacity=1);
 
-  setInterval(()=>{
-    const tmp=type==="sell"?"L1.webp":"L2.webp";
-    anim.src=tmp+"?"+Date.now();
-  },4000);
+  btn.src=btns[Math.floor(randomFloat()*btns.length)];
+  let taps=0,total=5,started=false;
+  btn.addEventListener("click",tap);
 
-  btn.style.display="none";
-  prog.style.display="none";
-}
+  function tap(){
+    if(!started){started=true;btn.style.animation="pulse .65s infinite alternate";}
+    taps++;
+    bar.style.width=(taps/total*100)+"%";
+    msg.textContent=taps<total?`Продолжай! Осталось ${total-taps} тапов 🎁`:`🎉 Подарок получен!`;
+    if(taps===total) revealGift();
+  }
+
+  function chooseWeighted(items, w){
+    const sum=w.reduce((a,b)=>a+Math.max(0,b),0);
+    if(sum===0)return items[Math.floor(randomFloat()*items.length)];
+    const r=randomFloat()*sum;
+    let acc=0;
+    for(let i=0;i<w.length;i++){
+      acc+=Math.max(0,w[i]);
+      if(r<acc)return items[i];
+    }
+    return items[items.length-1];
+  }
+
+  function revealGift(){
+    btn.style.opacity=0;
+    btn.style.pointerEvents="none";
+    setTimeout(()=>btn.style.display="none",200);
+    prog.style.opacity=0;
+    setTimeout(()=>prog.style.display="none",250);
+
+    const imgSrc = chooseWeighted(gifts, weights);
+    gift.style.boxShadow = 'none';
+    gift.style.background = 'none';
+    gift.style.padding = '0';
+
+    const img=new Image();
+    img.src=imgSrc;
+    img.decoding="async";
+    img.onload=()=>{
+      gift.src=imgSrc;
+      const special=['g9.webp','g16.webp','g18.webp'];
+      if(special.includes(imgSrc)){
+        gift.style.background = 'rgba(255,255,255,0.12)';
+        gift.style.borderRadius = '18px';
+        gift.style.padding = '8px';
+      }
+      gift.style.opacity=1;
+      gift.style.transform="scale(1)";
+      gift.style.pointerEvents="auto";
+    };
+  }
+
+  gift.onclick=()=>box.classList.add("show");
+  sell.onclick=()=>finish("sell");
+  recv.onclick=()=>finish("add");
+
+  function finish(type){
+    box.classList.remove("show");
+    gift.style.opacity=0;
+    gift.style.transform="scale(.75)";
+    setTimeout(()=>gift.style.display="none",150);
+
+    const text = type==="sell"
+      ? "💰 Звезды скоро будут зачислены ✨\n⭐ Возвращайся завтра за наградами!"
+      : "🎁 Подарок скоро будет добавлен в профиль 🎉\n✨ Приходи завтра за новым!";
+    msg.style.fontSize="1.4rem";
+    msg.innerText=text;
+
+    const anim=document.createElement("img");
+    anim.src=type==="sell"?"L1.webp":"L2.webp";
+    Object.assign(anim.style,{
+      position:"absolute",left:"50%",top:"50%",
+      transform:"translate(-50%,-50%)",
+      width:"55vw",maxWidth:"270px",opacity:0,
+      transition:"opacity 0.4s ease",pointerEvents:"none",zIndex:"10"
+    });
+    document.body.appendChild(anim);
+    requestAnimationFrame(()=>anim.style.opacity=1);
+
+    setInterval(()=>{
+      const tmp=type==="sell"?"L1.webp":"L2.webp";
+      anim.src=tmp+"?"+Date.now();
+    },4000);
+
+    btn.style.display="none";
+    prog.style.display="none";
+  }
+});
 </script>
 </body>
 </html>
