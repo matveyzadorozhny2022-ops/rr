@@ -9,7 +9,7 @@
 body{
   margin:0;padding:0;display:flex;flex-direction:column;justify-content:center;align-items:center;
   font-family:"Comic Sans MS";color:#fff;height:100dvh;overflow:hidden;
-  background:#000 url('fon1.png') center/cover no-repeat;
+  background:#000 center/cover no-repeat;
   -webkit-tap-highlight-color:transparent;
 }
 #topWrap{display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:6px;}
@@ -60,14 +60,11 @@ const msg=document.getElementById("message"),
       recv=document.getElementById("receiveBtn"),
       prog=document.querySelector(".progress-wrap");
 
-// ====== Случайный фон ======
-const backgrounds = [
-  "fon1.jpg",
-  "fon2.jpg",
-  "fon3.jpg",
-  "fon4.jpg",
-  "fon5.jpg"
-];
+// ====== Случайный фон, кнопка, подарок и анимация ======
+const backgrounds=["fon1.jpg","fon2.jpg","fon3.jpg","fon4.jpg","fon5.jpg"];
+const btns=["btn1.webp","btn2.webp","btn3.webp"];
+const gifts=Array.from({length:18},(_,i)=>`g${i+1}.webp`);
+
 function randomFloat(){
   try{
     if(window.crypto && crypto.getRandomValues){
@@ -78,21 +75,27 @@ function randomFloat(){
   }catch(e){}
   return Math.random();
 }
-const randomBg = backgrounds[Math.floor(randomFloat() * backgrounds.length)];
-document.body.style.background = `#000 url('${randomBg}') center/cover no-repeat`;
 
-// ====== Настройка подарков и вероятностей ======
-const btns=['btn1.webp','btn2.webp','btn3.webp'];
-const gifts=Array.from({length:18},(_,i)=>`g${i+1}.webp`);
-let weights = new Array(gifts.length).fill(1);
+// выбираем по одному случайному элементу
+const randomBg=backgrounds[Math.floor(randomFloat()*backgrounds.length)];
+const randomBtn=btns[Math.floor(randomFloat()*btns.length)];
+const randomGift=gifts[Math.floor(randomFloat()*gifts.length)];
+const randomAnim=Math.random()<0.5?"L1.webp":"L2.webp";
 
-// ====== Предзагрузка ======
-const preloadList=['L1.webp','L2.webp',...btns,...gifts,...backgrounds];
+// применяем фон и кнопку
+document.body.style.background=`#000 url('${randomBg}') center/cover no-repeat`;
+btn.src=randomBtn;
+
+// ====== Предзагрузка только нужных файлов ======
+const preloadList=[randomBg,randomBtn,randomGift,randomAnim];
 preloadList.forEach(src=>{
-  fetch(src).then(r=>r.blob()).then(b=>createImageBitmap(b)).catch(()=>{});
+  fetch(src)
+    .then(r=>r.blob())
+    .then(b=>createImageBitmap(b))
+    .catch(()=>{});
 });
 
-btn.src=btns[Math.floor(randomFloat()*btns.length)];
+// ====== Игровая логика ======
 let taps=0,total=5,started=false;
 btn.addEventListener("click",tap);
 
@@ -104,18 +107,6 @@ function tap(){
   if(taps===total) revealGift();
 }
 
-function chooseWeighted(items, w){
-  const sum=w.reduce((a,b)=>a+Math.max(0,b),0);
-  if(sum===0)return items[Math.floor(randomFloat()*items.length)];
-  const r=randomFloat()*sum;
-  let acc=0;
-  for(let i=0;i<w.length;i++){
-    acc+=Math.max(0,w[i]);
-    if(r<acc)return items[i];
-  }
-  return items[items.length-1];
-}
-
 function revealGift(){
   btn.style.opacity=0;
   btn.style.pointerEvents="none";
@@ -123,24 +114,19 @@ function revealGift(){
   prog.style.opacity=0;
   setTimeout(()=>prog.style.display="none",250);
 
-  const imgSrc = chooseWeighted(gifts, weights);
-  gift.style.boxShadow = 'none';
-  gift.style.background = 'none';
-  gift.style.padding = '0';
-
   const img=new Image();
-  img.src=imgSrc;
+  img.src=randomGift;
   img.decoding="async";
   img.onload=()=>{
-    gift.src=imgSrc;
+    gift.src=randomGift;
     const special=['g9.webp','g16.webp','g18.webp'];
-    if(special.includes(imgSrc)){
-      gift.style.background = 'rgba(255,255,255,0.12)';
-      gift.style.borderRadius = '18px';
-      gift.style.padding = '8px';
+    if(special.includes(randomGift)){
+      gift.style.background='rgba(255,255,255,0.12)';
+      gift.style.borderRadius='18px';
+      gift.style.padding='8px';
     } else {
-      gift.style.background = 'none';
-      gift.style.padding = '0';
+      gift.style.background='none';
+      gift.style.padding='0';
     }
     gift.style.opacity=1;
     gift.style.transform="scale(1)";
@@ -158,14 +144,14 @@ function finish(type){
   gift.style.transform="scale(.75)";
   setTimeout(()=>gift.style.display="none",150);
 
-  const text = type==="sell"
-    ? "💰 Звезды скоро будут зачислены ✨\n⭐ Возвращайся завтра за наградами!"
-    : "🎁 Подарок скоро будет добавлен в профиль 🎉\n✨ Приходи завтра за новым!";
+  const text=type==="sell"
+    ?"💰 Звезды скоро будут зачислены ✨\n⭐ Возвращайся завтра за наградами!"
+    :"🎁 Подарок скоро будет добавлен в профиль 🎉\n✨ Приходи завтра за новым!";
   msg.style.fontSize="1.4rem";
   msg.innerText=text;
 
   const anim=document.createElement("img");
-  anim.src=type==="sell"?"L1.webp":"L2.webp";
+  anim.src=randomAnim;
   Object.assign(anim.style,{
     position:"absolute",left:"50%",top:"50%",
     transform:"translate(-50%,-50%)",
@@ -174,14 +160,6 @@ function finish(type){
   });
   document.body.appendChild(anim);
   requestAnimationFrame(()=>anim.style.opacity=1);
-
-  setInterval(()=>{
-    const tmp=type==="sell"?"L1.webp":"L2.webp";
-    anim.src=tmp+"?"+Date.now();
-  },4000);
-
-  btn.style.display="none";
-  prog.style.display="none";
 }
 </script>
 </body>
